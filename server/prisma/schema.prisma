@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:secret@localhost:5434/creator-os"
+}
+
+model User {
+  id                     String   @id @default(cuid())
+  email                  String   @unique
+  username               String?  @unique
+  name                   String?
+  avatarUrl              String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  hasCompletedOnboarding Boolean  @default(false)
+
+  // Relations
+  products Product[]
+  orders   Order[]
+}
+
+model Product {
+  id        String   @id @default(uuid())   
+  title     String
+  price     Int
+  fileUrl   String?
+  createdAt DateTime @default(now())        
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  creatorId String
+  creator   User     @relation(fields: [creatorId], references: [id])
+
+  orders    Order[]
+
+  // Indexing
+  @@index([creatorId])                     
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  amount    Int
+  status    OrderStatus @default(PENDING)  
+
+  // Payment provider
+  paymentProviderOrderId String @unique
+
+  // Relations
+  productId String                               
+  product   Product @relation(fields: [productId], references: [id])
+
+  creatorId String
+  creator   User    @relation(fields: [creatorId], references: [id])
+
+  // Indexing
+  @@index([productId])
+  @@index([creatorId])
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
